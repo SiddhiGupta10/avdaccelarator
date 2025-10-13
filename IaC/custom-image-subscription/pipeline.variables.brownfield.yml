@@ -1,0 +1,31 @@
+variables:
+
+########### Pipeline variables ###############
+
+- name: templateBasePath
+  value: 'workload/bicep/brownfield/customImageTemplatesPrerequisites/deploy.bicep' ## path to the bicep template file from workload folder
+
+- name: parametersPath
+  value: 'IaC/custom-image-subscription/parameters/custom-image-brownfield.bicepparam'
+
+- name: azurePowerShellVersion
+  value: latestVersion
+
+########### Pool variables ###############
+
+- name: vmImage
+  value: 'ubuntu-latest'
+
+- name: poolName
+  value: ''
+
+########### Deployment variables ###############
+
+- name: location
+  value: 'swedencentral'
+
+- name: serviceConnection
+  value: '' ## change for each subscription
+
+- name: devOpsPipelineEnvironment
+  value: '' ## change as necessary

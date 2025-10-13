@@ -1,0 +1,78 @@
+name: 'Custom Image Deployment'
+
+parameters:
+- name: deploymentType
+  displayName: 'Type of deployment'
+  type: string
+  default: 'greenfield'
+  values:
+  - greenfield
+  - brownfield
+
+variables:
+  - ${{ if eq(parameters.deploymentType, 'greenfield') }}:
+    - template: pipeline.variables.greenfield.yml
+  - ${{ if eq(parameters.deploymentType, 'brownfield') }}:
+    - template: pipeline.variables.brownfield.yml
+
+# pool:
+#   name: $(poolName)
+
+trigger: none
+
+stages:
+- stage: Validation
+  condition: succeeded()
+  jobs:
+  - deployment: Template_Validation
+    displayName: 'Deployment validation of Custom Image Template'
+    environment: $(devOpsPipelineEnvironment)
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - checkout: self
+          - task: AzureCLI@2
+            inputs:
+              azureSubscription: '$(serviceConnection)'
+              scriptType: bash
+              scriptLocation: inlineScript
+              useGlobalConfig: false
+              workingDirectory: '$(System.DefaultWorkingDirectory)'
+              inlineScript: |
+                az --version
+                az bicep build --file $(System.DefaultWorkingDirectory)/$(templateBasePath)
+                az deployment sub what-if \
+                  --location $(location) \
+                  --template-file $(System.DefaultWorkingDirectory)/$(templateBasePath) \
+                  --parameters $(System.DefaultWorkingDirectory)/$(parametersPath)
+
+- stage: Deployment
+  dependsOn:
+  - Validation
+  condition: succeeded('Validation')
+  jobs:
+  - deployment: Template_Deployment
+    displayName: 'Deployment of Custom Image Template'
+    environment: $(devOpsPipelineEnvironment)
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - checkout: self
+          - task: AzureCLI@2
+            inputs:
+              environment: '$(devOpsPipelineEnvironment)'
+              azureSubscription: '$(serviceConnection)'
+              scriptType: bash
+              scriptLocation: inlineScript
+              useGlobalConfig: false
+              inlineScript: |
+                az --version
+                az deployment sub create \
+                  --name subcr-avd-shd-tst-001-deployment \
+                  --location $(location) \
+                  --template-file $(System.DefaultWorkingDirectory)/$(templateBasePath) \
+                  --parameters $(System.DefaultWorkingDirectory)/$(parametersPath)
+
+

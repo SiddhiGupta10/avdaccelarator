@@ -1,0 +1,242 @@
+trigger: none
+
+parameters:
+- name: environment
+  displayName: 'Environment to deploy to'
+  type: string
+  default: 'test'
+  values:
+    - test
+    - integration
+
+- name: mode
+  displayName: 'Registry Mode'
+  type: string
+  default: 'Enable'
+  values:
+    - Enable
+    - Disable
+
+variables:
+- ${{ if eq(parameters.environment, 'test') }}:
+  - template: pipeline-edge-developer-tools.variables.tst.yml
+- ${{ if eq(parameters.environment, 'integration') }}:
+  - template: pipeline-edge-developer-tools.variables.int.yml
+
+pool:
+  name: $(poolName)
+
+jobs:
+- job: ToggleFeature
+  displayName: Toggle DeveloperToolsAvailability across AVD session hosts
+  steps:
+  - task: AzurePowerShell@5
+    displayName: Update registry value on AVD session hosts (Active)
+    inputs:
+      azureSubscription: '$(serviceConnection)'
+      ScriptType: 'InlineScript'
+      pwsh: true
+      azurePowerShellVersion: 'LatestVersion'
+      Inline: |
+        $ErrorActionPreference = 'Stop'
+
+        ############################################################
+        # 0. Input / pipeline variables
+        ############################################################
+        $modeParam              = '${{ parameters.mode }}'                     # Enable / Disable
+        $hostPoolRg             = '$(resourceGroup)'                           # Host pool (management plane) RG
+        $vmRgRaw                = '$(sessionHostVmResourceGroup)'              # Session host VMs RG (may differ)
+        $hostPoolName           = '$(hostPoolName)'
+        $registryPath           = '$(registryPath)'
+        $registryName           = '$(registryName)'
+        $subscriptionIdMacro    = '$(subscriptionId)'                          # Optional (add to variables template if you want to force context)
+        $hostPoolSubIdMacro     = '$(subscriptionId)'                          # Optional
+        $vmSubIdMacro           = '$(subscriptionId)'                          # Optional
+        $startTime              = Get-Date
+
+        ############################################################
+        # 1. Resolve subscriptions (optional)
+        ############################################################
+        function Resolve-OptionalId {
+          param([string]$macro)
+          if ([string]::IsNullOrWhiteSpace($macro)) { return $null }
+          if ($macro -match '^\$\(.+\)$') { return $null }  # Unexpanded macro
+          return $macro
+        }
+
+        $forcedSubId        = Resolve-OptionalId $subscriptionIdMacro
+        $hostPoolSubId      = Resolve-OptionalId $hostPoolSubIdMacro
+        $vmSubId            = Resolve-OptionalId $vmSubIdMacro
+
+        if ($forcedSubId) {
+          Write-Host "Setting Az context to forced subscription $forcedSubId"
+          Set-AzContext -SubscriptionId $forcedSubId | Out-Null
+        } elseif ($hostPoolSubId) {
+          Write-Host "Setting Az context to host pool subscription $hostPoolSubId"
+          Set-AzContext -SubscriptionId $hostPoolSubId | Out-Null
+        } else {
+          Write-Host "No explicit subscriptionId provided; using current context: $((Get-AzContext).Subscription.Id)"
+        }
+
+        ############################################################
+        # 2. Validate resource group names
+        ############################################################
+        if ([string]::IsNullOrWhiteSpace($hostPoolRg) -or $hostPoolRg -match '^\$\(.+\)$') {
+          Write-Error "Host pool resourceGroup pipeline variable is missing."
+          exit 1
+        }
+
+        $vmRg = if ([string]::IsNullOrWhiteSpace($vmRgRaw) -or $vmRgRaw -match '^\$\(.+\)$') { $hostPoolRg } else { $vmRgRaw }
+
+        Write-Host "Host pool RG              : $hostPoolRg"
+        Write-Host "Session host VM RG        : $vmRg"
+        Write-Host "Host pool subscription Id : $((Get-AzContext).Subscription.Id)"
+
+        ############################################################
+        # 3. Ensure required Az modules (lightweight idempotent)
+        ############################################################
+        $modulesNeeded = @('Az.DesktopVirtualization','Az.Compute')
+        foreach ($m in $modulesNeeded) {
+          if (-not (Get-Module -ListAvailable -Name $m)) {
+            Write-Host "Installing module $m..."
+            Install-Module -Name $m -Scope CurrentUser -Force -Repository PSGallery -ErrorAction Stop
+          }
+          Import-Module $m -ErrorAction Stop
+        }
+
+        ############################################################
+        # 4. Verify host pool RG exists
+        ############################################################
+        $hpRgCheck = Get-AzResourceGroup -Name $hostPoolRg -ErrorAction SilentlyContinue
+        if (-not $hpRgCheck) {
+          Write-Error "Host pool resource group '$hostPoolRg' not found in subscription $((Get-AzContext).Subscription.Id)."
+          exit 1
+        }
+
+        # If VM RG is in a different subscription, switch (vmSubId preferred over host pool)
+        if ($vmSubId -and ($vmSubId -ne (Get-AzContext).Subscription.Id)) {
+          Write-Host "Switching context to VM subscription $vmSubId"
+          Set-AzContext -SubscriptionId $vmSubId | Out-Null
+        } elseif ($vmSubId -and -not $forcedSubId -and -not $hostPoolSubId) {
+          # Already in the forced/hostPool subscription; no change.
+          Write-Host "VM subscription specified but already in same context."
+        }
+
+        # Validate VM RG (fallback if missing)
+        $vmRgExists = Get-AzResourceGroup -Name $vmRg -ErrorAction SilentlyContinue
+        if (-not $vmRgExists) {
+          Write-Warning "VM resource group '$vmRg' not found in subscription $((Get-AzContext).Subscription.Id). Falling back to host pool RG."
+          $vmRg = $hostPoolRg
+        }
+
+        ############################################################
+        # 5. Retrieve session hosts (Active or Available)
+        ############################################################
+        # Switch back to host pool subscription if different (for host pool query)
+        if ($hostPoolSubId -and ($hostPoolSubId -ne (Get-AzContext).Subscription.Id)) {
+        Set-AzContext -SubscriptionId $hostPoolSubId | Out-Null
+        } elseif ($forcedSubId) {
+          # Already in forced subscription
+        }
+
+        Write-Host "Querying session hosts in host pool '$hostPoolName' (RG: $hostPoolRg)..."
+        $sessionHosts = Get-AzWvdSessionHost -ResourceGroupName $hostPoolRg -HostPoolName $hostPoolName -ErrorAction Stop |
+                        Where-Object { $_.Status -in @('Available') }
+
+        if (-not $sessionHosts) {
+          Write-Host "No Active/Available session hosts found. Nothing to do."
+          exit 0
+        }
+
+        Write-Host ("Found {0} session host(s) (Active/Available)." -f $sessionHosts.Count)
+
+        ############################################################
+        # 6. Derive target registry value
+        ############################################################
+        $desiredValue = if ($modeParam -eq 'Enable') { 0 } else { 2 }
+        Write-Host "Mode '$modeParam' -> Desired registry value: $desiredValue"
+
+        ############################################################
+        # 7. Per-VM script (RunCommand)
+        ############################################################
+
+        $script = @"
+        try {
+            if (-not (Test-Path -Path '$registryPath')) {
+                New-Item -Path '$registryPath' -Force | Out-Null
+            }
+            Set-ItemProperty -Path '$registryPath' -Name '$registryName' -Value $desiredValue
+            Write-Output "Registry key '$registryName' updated to $desiredValue"
+            exit 0
+        } catch {
+            Write-Error "Failed to update registry: $($_.Exception.Message)"
+            exit 1
+        }
+        "@
+
+        ############################################################
+        # 8. Switch to VM subscription (if necessary) for RunCommand
+        ############################################################
+        if ($vmSubId -and ($vmSubId -ne (Get-AzContext).Subscription.Id)) {
+          Write-Host "Switching context to VM subscription $vmSubId for RunCommand operations."
+          Set-AzContext -SubscriptionId $vmSubId | Out-Null
+        } elseif ($forcedSubId -and $forcedSubId -ne (Get-AzContext).Subscription.Id) {
+          Set-AzContext -SubscriptionId $forcedSubId | Out-Null
+        }
+
+        ############################################################
+        # 9. Run command on each VM
+        ############################################################
+        $success = 0
+        $failed  = 0
+
+        foreach ($sh in $sessionHosts) {
+          # Raw “name” pattern: hostPoolName/sessionHostName[.domain]
+          $rawName = $sh.Name
+
+          # 1. Get the portion after the last slash
+          $sessionHostSegment = ($rawName -split '/')[ -1 ]
+
+          # 2. Strip FQDN if present
+          $vmName = ($sessionHostSegment -split '\.')[0]
+
+          Write-Host "Resolved session host raw '$rawName' -> VM name '$vmName' (RG '$vmRg')."
+
+          # 3. (Optional) verify VM exists before invoking RunCommand
+          $vmCheck = Get-AzVM -Name $vmName -ResourceGroupName $vmRg -ErrorAction SilentlyContinue
+          if (-not $vmCheck) {
+            Write-Warning "VM '$vmName' not found in RG '$vmRg'. Skipping."
+            $failed++
+            continue
+          }
+
+          try {
+            Invoke-AzVMRunCommand -ResourceGroupName $vmRg `
+                                  -VMName $vmName `
+                                  -CommandId 'RunPowerShellScript' `
+                                  -ScriptString $script | Out-Host
+            $success++
+          }
+          catch {
+            Write-Warning "RunCommand failed on '$vmName': $($_.Exception.Message)"
+            $failed++
+          }
+        }
+
+        ############################################################
+        # 10. Summary
+        ############################################################
+        $elapsed = (Get-Date) - $startTime
+        Write-Host "---------- Summary ----------"
+        Write-Host "Host pool RG              : $hostPoolRg"
+        Write-Host "Session host VM RG        : $vmRg"
+        Write-Host "Total hosts processed     : $($sessionHosts.Count)"
+        Write-Host "Succeeded                 : $success"
+        Write-Host "Failed                    : $failed"
+        Write-Host "Desired value applied     : $desiredValue"
+        Write-Host "Elapsed                   : $([int]$elapsed.TotalSeconds) sec"
+        Write-Host "-----------------------------"
+
+        if ($failed -gt 0) {
+          Write-Warning "$failed host(s) failed. Consider re-running after investigation."
+        }

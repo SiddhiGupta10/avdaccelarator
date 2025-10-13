@@ -1,0 +1,74 @@
+name: 'Upload Scripts to Blob Storage'
+
+parameters:
+- name: environment
+  displayName: 'Environment to deploy to'
+  type: string
+  default: 'Production'
+  values:
+  - Production
+  - Canary
+
+- name: storageAccountName
+  displayName: 'Storage Account Name to copy script'
+  type: string
+  default: '' ## provide the storage account name where scripts to be uploaded
+
+variables:
+- name: fileList
+  value: 'restartSessionHosts.ps1'  # space-separated list of file names
+- ${{ if eq(parameters.environment, 'Production') }}:
+  - name: serviceConnection
+    value: '<service_connection>' ## change for each subscription
+  - name: devOpsPipelineEnvironment
+    value: 'AVD-Production'
+  # - name: poolName
+  #   value: ''
+- ${{ if eq(parameters.environment, 'Canary') }}:
+  - name: serviceConnection
+    value: '<service_connection>' ## change for each subscription
+  - name: devOpsPipelineEnvironment
+    value: 'AVD-Canary'
+  # - name: poolName
+  #   value: ''
+
+# pool:
+#   name: $(poolName)
+
+trigger: none
+
+stages:
+- stage: UploadScripts
+  condition: succeeded()
+  jobs:
+  - deployment: Upload_Scripts
+    displayName: 'Upload Scripts to ${{ parameters.storageAccountName }}'
+    environment: $(devOpsPipelineEnvironment)
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - checkout: self
+          - task: AzureCLI@2
+            inputs:
+              azureSubscription: '$(serviceConnection)'  # must be configured to use managed identity
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                for file in $(fileList); do
+                  # Delete the blob if it already exists to avoid conflicts
+                  az storage blob delete \
+                    --account-name ${{ parameters.storageAccountName }} \
+                    --container-name scripts \
+                    --name $file \
+                    --auth-mode login
+                  echo "Uploading $file to blob storage..."
+                  az storage blob upload \
+                    --account-name ${{ parameters.storageAccountName }} \
+                    --container-name scripts \
+                    --name $file \
+                    --file $(System.DefaultWorkingDirectory)/IaCApotti/uploadScripts/scripts/$file \
+                    --auth-mode login \
+                    --overwrite true
+                done
+
