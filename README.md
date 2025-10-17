@@ -143,3 +143,5 @@ These can be extended or customized to include additional configuration such as 
 * Executes the actual provisioning using Bicep templates and parameters
 * Applies all changes as defined in the templates
 * Creates or updates AVD infrastructure resources
+* This stage uses defines Environment for deployment.
+  
