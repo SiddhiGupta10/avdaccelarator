@@ -243,7 +243,6 @@ var varDeploymentScriptName = customNaming ? deploymentScriptCustomName
 var varVnetResourceGroupName = split(existingVirtualNetworkResourceId, '/')[4]
 var varVirtualNetworkName = split(existingVirtualNetworkResourceId, '/')[8]
 var varSubnetName = existingSubnetName
-var varIdentityResourceId = userAssignedManagedIdentity.outputs.resourceId
 var varImageDefinitionName = customNaming ? imageDefinitionCustomName : 'avd-${mpImageOffer}-${mpImageSku}'
 var varImageGalleryName = customNaming ? imageGalleryCustomName : 'gal_avd_${varNamingStandard}'
 var varLogAnalyticsWorkspaceName = customNaming ? logAnalyticsWorkspaceCustomName : 'log-avd-${varNamingStandard}'
@@ -394,7 +393,7 @@ var varVirtualNetworkJoinRole = [
 // Customization Steps
 //-------------------------
 
-var varScriptCustomizers = union(varPreConfigurationCustomizer, varSoftwareInstallationCustomizer, varDecryptCustomizer, varPostConfigurationCustomizer)
+var varScriptCustomizers = union(varPreConfigurationCustomizer, varSoftwareInstallationCustomizer, varCleanupInstallerCustomizer)
 var varCustomizationSteps = union(varScriptCustomizers, varRemainingCustomizers)
 
 // Customization step for pre configurations
@@ -421,103 +420,15 @@ var varPreConfigurationCustomizer = softwareInstallation ? [
       'Expand-Archive -Path $output -DestinationPath "C:\\management" -Force'
       '$azcopyPath = Get-ChildItem -Path "C:\\management" -Recurse -Filter "azcopy.exe" | Select-Object -First 1 -ExpandProperty FullName'
       'Copy-Item $azcopyPath "C:\\management\\azcopy.exe" -Force'
-      '[System.Environment]::SetEnvironmentVariable("AZCOPY_AUTO_LOGIN_TYPE", "MSI")'
-      'Write-Host "Environment variable set to authorize by using a user-assigned managed identity."'
-      'Start-Sleep -Seconds 5'
-      'Write-Host "UAMI: ${varIdentityResourceId}"'
-      'Write-Host "Logging in to AzCopy..."'
-      '& "C:\\management\\azcopy.exe" login --identity --identity-resource-id "${varIdentityResourceId}"'
       '& "C:\\management\\azcopy.exe" copy "https://${varStorageAccountName}.blob.core.windows.net/software" "C:\\AIB" --recursive'
       '$pathItems = Get-ChildItem -Path "C:\\AIB\\software" | Select-Object FullName'
       'foreach ($pathItem in $pathItems) { Write-Host "Found software item: $($pathItem.FullName)" }'
     ]
   }
-  {
-    type: 'PowerShell'
-    name: 'InstallingLanguagePack'
-    inline: [
-      'dism /Online /Add-Package /PackagePath:"C:\\AIB\\software\\LanguagePack\\Microsoft-Windows-Client-Language-Pack_x64_fi-fi.cab" /NoRestart'
-      'dism /Online /Add-Package /PackagePath:"C:\\AIB\\software\\LanguagePack\\Microsoft-Windows-LanguageFeatures-Basic-fi-fi-Package~31bf3856ad364e35~amd64~~.cab" /NoRestart'
-    ]
-  }
-  {
-    type: 'WindowsRestart'
-    restartCheckCommand: 'Write-Host "Restarting post Language Pack Installation"'
-    restartTimeout: '10m'
-  }
-  // Remove non-required Appx packages
-  {
-    name: 'RunRemoveAppxScript'
-    type: 'PowerShell'
-    runAsSystem: true
-    runElevated: true
-    validExitCodes: [0]
-    inline: [
-      'Invoke-WebRequest -Uri "https://raw.githubusercontent.com/Azure/RDS-Templates/master/CustomImageTemplateScripts/CustomImageTemplateScripts_2024-03-27/RemoveAppxPackages.ps1" -OutFile "C:\\AIB\\RemoveAppxPackages.ps1"'
-      'C:\\AIB\\RemoveAppxPackages.ps1 -AppxPackages @("Microsoft.Xbox.TCUI","Microsoft.XboxGamingOverlay","Microsoft.XboxIdentityProvider","Microsoft.XboxSpeechToTextOverlay","Microsoft.YourPhone","Microsoft.PowerAutomateDesktop","Microsoft.BingNews","Microsoft.BingSearch","Microsoft.BingWeather","Microsoft.OutlookForWindows","Windows.DevHome","WindowsFeedbackHub","Microsoft.MicrosoftSolitaireCollection","Microsoft.MicrosoftOfficeHub","Clipchamp.Clipchamp","Microsoft.GamingApp","Microsoft.ScreenSketch","Microsoft.Todos")'
-    ]
-  }
-  {
-    type: 'WindowsRestart'
-    restartCheckCommand: 'Write-Host "Restarting post setting wide system language and removing Appx packages"'
-    restartTimeout: '10m'
-  }
 ] : []
 
 // Customization step for software installation from storage account
 var varSoftwareInstallationCustomizer = softwareInstallation ? [
-  {
-    type: 'PowerShell'
-    name: 'Hyperdrive-Hyperspace-Installation'
-    runElevated: true
-    runAsSystem: true
-    validExitCodes: [0, 3010, 16001]
-    scriptUri: 'https://${varStorageAccountName}.blob.core.windows.net/scripts/hyperspaceInstaller.ps1'
-  }
-  {
-    type: 'PowerShell'
-    name: 'Sleep for a 2 minutes'
-    runElevated: true
-    runAsSystem: true
-    inline: [
-      'Write-Host "Post Hyperspace-Installation, 2 min sleep"'
-      'Start-Sleep -Seconds 120'
-    ]
-  }  
-  {
-    type: 'PowerShell'
-    name: 'Hyperspace-Updates'
-    runElevated: true
-    runAsSystem: true
-    validExitCodes: [0, 3010]
-    scriptUri: 'https://${varStorageAccountName}.blob.core.windows.net/scripts/hyperspaceUpdate.ps1'
-  }
-  {
-    type: 'PowerShell'
-    name: 'Sleep for a 2 minutes'
-    runElevated: true
-    runAsSystem: true
-    inline: [
-      'Write-Host "Post Hyperspace-Update, 2 min sleep"'
-      'Start-Sleep -Seconds 120'
-    ]
-  }  
-  {
-    type: 'PowerShell'
-    name: 'EpicStudio-Installation'
-    runElevated: true
-    runAsSystem: true
-    validExitCodes: [0]
-    scriptUri: 'https://${varStorageAccountName}.blob.core.windows.net/scripts/epicStudioInstaller.ps1'
-  }
-  {
-    type: 'PowerShell'
-    name: 'FileZilla-Installation'
-    runElevated: true
-    runAsSystem: true
-    validExitCodes: [0]
-    scriptUri: 'https://${varStorageAccountName}.blob.core.windows.net/scripts/fileZillaInstaller.ps1'
-  }
   {
     type: 'PowerShell'
     name: 'Putty-Installation'
@@ -533,53 +444,13 @@ var varSoftwareInstallationCustomizer = softwareInstallation ? [
       'Write-Host "PuTTY copied successfully"'
     ]
   }
-  {
+  { //Sample - script to run a powershell script from storage account
     type: 'PowerShell'
-    name: 'DigiSignClient-Installation'
+    name: 'Software-Installation'
     runElevated: true
     runAsSystem: true
     validExitCodes: [0]
-    scriptUri: 'https://${varStorageAccountName}.blob.core.windows.net/scripts/digiSignClientInstaller.ps1'
-  }
-] : []
-
-// Customization step to decrypt the Epic Env Config file
-var varDecryptCustomizer = softwareInstallation ? [
-  {
-    type: 'PowerShell'
-    name: 'Decrypt-EpicEnvConfig'
-    runElevated: true
-    runAsSystem: true
-    validExitCodes: [0]
-    scriptUri: 'https://${varStorageAccountName}.blob.core.windows.net/scripts/decryptConfigFile.ps1'
-  }
-  {
-    type: 'PowerShell'
-    name: 'Decrypt-EpicComm'
-    runElevated: true
-    runAsSystem: true
-    validExitCodes: [0]
-    scriptUri: 'https://${varStorageAccountName}.blob.core.windows.net/scripts/decryptEpicCommFile.ps1'
-  }
-] : []
-
-// Customization step for post configuration
-var varPostConfigurationCustomizer = softwareInstallation ? [
-   {
-    type: 'PowerShell'
-    name: 'StartupConfigScript'
-    runElevated: true
-    runAsSystem: true
-    scriptUri: 'https://${varStorageAccountName}.blob.core.windows.net/scripts/createTaskScheduled.ps1'
-    validExitCodes: [0]
-  }
-  {
-    type: 'PowerShell'
-    name: 'ImportCertificates'
-    runElevated: true
-    runAsSystem: true
-    scriptUri: 'https://${varStorageAccountName}.blob.core.windows.net/scripts/importCertificates.ps1'
-    validExitCodes: [0]
+    scriptUri: 'https://${varStorageAccountName}.blob.core.windows.net/scripts/softwareInstaller.ps1'
   }
 ] : []
 
@@ -629,6 +500,22 @@ var varRemainingCustomizers = [
     restartTimeout: '10m'
   }
 ]
+
+var varCleanupInstallerCustomizer = softwareInstallation ? [
+  {
+    type: 'PowerShell'
+    name: 'CleanupInstallers'
+    runElevated: true
+    runAsSystem: true
+    inline: [
+      'Write-Host "[INFO] Cleaning up installer files..."'
+      '$pathsToClean = "C:\\AIB"'
+      'foreach ($path in $($pathsToClean)) { if (Test-Path $path) { Remove-Item -Path $path -Recurse -Force -ErrorAction SilentlyContinue } }'
+      'Write-Host "[SUCCESS] All installations completed and installer files removed."'
+    ]
+    validExitCodes: [0]
+  }
+]: []
 
 // =========== //
 // Deployments //
