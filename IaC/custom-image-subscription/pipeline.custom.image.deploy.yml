@@ -25,27 +25,21 @@ stages:
   condition: succeeded()
   jobs:
   - deployment: Template_Validation
-    displayName: 'Deployment validation of Custom Image Template'
-    environment: $(devOpsPipelineEnvironment)
-    strategy:
-      runOnce:
-        deploy:
-          steps:
-          - checkout: self
-          - task: AzureCLI@2
-            inputs:
-              azureSubscription: '$(serviceConnection)'
-              scriptType: bash
-              scriptLocation: inlineScript
-              useGlobalConfig: false
-              workingDirectory: '$(System.DefaultWorkingDirectory)'
-              inlineScript: |
-                az --version
-                az bicep build --file $(System.DefaultWorkingDirectory)/$(templateBasePath)
-                az deployment sub what-if \
-                  --location $(location) \
-                  --template-file $(System.DefaultWorkingDirectory)/$(templateBasePath) \
-                  --parameters $(System.DefaultWorkingDirectory)/$(parametersPath)
+    displayName: '${{ parameters.deploymentType }} validation of Custom Image Template'
+    steps:
+    - task: AzureCLI@2
+      inputs:
+        azureSubscription: '$(serviceConnection)'
+        scriptType: bash
+        scriptLocation: inlineScript
+        useGlobalConfig: false
+        inlineScript: |
+          az --version
+          az bicep build --file $(System.DefaultWorkingDirectory)/$(templateBasePath)
+          az deployment sub what-if \
+            --location $(location) \
+            --template-file $(System.DefaultWorkingDirectory)/$(templateBasePath) \
+            --parameters $(System.DefaultWorkingDirectory)/$(parametersPath)
 
 - stage: Deployment
   dependsOn:
@@ -53,7 +47,7 @@ stages:
   condition: succeeded('Validation')
   jobs:
   - deployment: Template_Deployment
-    displayName: 'Deployment of Custom Image Template'
+    displayName: '${{ parameters.deploymentType }} deployment of Custom Image Template'
     environment: $(devOpsPipelineEnvironment)
     strategy:
       runOnce:

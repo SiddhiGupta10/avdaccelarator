@@ -57,7 +57,7 @@ param keyVaultResourceId string
 // =========== //
 
 // Hostpool creation.
-module hostPool '../../../../../../avm/1.0.0/res/desktop-virtualization/host-pool/main.bicep' = {
+module hostPool '../../../../../avm/1.0.0/res/desktop-virtualization/host-pool/main.bicep' = {
   scope: resourceGroup('${subscriptionId}', '${serviceObjectsRgName}')
   name: 'HostPool-${time}'
   params: {
@@ -85,7 +85,7 @@ module hostPool '../../../../../../avm/1.0.0/res/desktop-virtualization/host-poo
 }
 
 // Workspace.
-module workspace '../../../../../../avm/1.0.0/res/desktop-virtualization/workspace/main.bicep' = {
+module workspace '../../../../../avm/1.0.0/res/desktop-virtualization/workspace/main.bicep' = {
   scope: resourceGroup('${subscriptionId}', '${serviceObjectsRgName}')
   name: 'Workspace-${time}'
   params: {
@@ -95,7 +95,7 @@ module workspace '../../../../../../avm/1.0.0/res/desktop-virtualization/workspa
 }
 
 // Scaling plan.
-module scalingPlan '../../../../../../avm/1.0.0/res/desktop-virtualization/scaling-plan/main.bicep' =  if (deployScalingPlan)  {
+module scalingPlan '../../../../../avm/1.0.0/res/desktop-virtualization/scaling-plan/main.bicep' =  if (deployScalingPlan)  {
   name: 'Scaling-Plan-${scalingPlanName}'
   params: {
       name:scalingPlanName

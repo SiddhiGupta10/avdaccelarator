@@ -70,7 +70,7 @@ var varModules = [
 // =========== //
 
 // Managed identity.
-module userAssignedManagedIdentity '../../../../../../avm/1.1.0/res/managed-identity/user-assigned-identity/main.bicep' = {
+module userAssignedManagedIdentity '../../../../../avm/1.1.0/res/managed-identity/user-assigned-identity/main.bicep' = {
   scope: resourceGroup(varServicesSubId, hostPoolResourceGroup)
   name: 'User-Assigned-Managed-Identity-${time}'
   params: {
@@ -80,7 +80,7 @@ module userAssignedManagedIdentity '../../../../../../avm/1.1.0/res/managed-iden
 }
 
 // Role assignments.
-module dvRoleAssignment '../../../../../../avm/1.0.0/ptn/authorization/role-assignment/modules/resource-group.bicep' = {
+module dvRoleAssignment '../../../../../avm/1.0.0/ptn/authorization/role-assignment/modules/resource-group.bicep' = {
   name: 'Role-Assignment-DV-${time}'
   scope: resourceGroup(varServicesSubId, hostPoolResourceGroup)
   params: {
@@ -90,7 +90,7 @@ module dvRoleAssignment '../../../../../../avm/1.0.0/ptn/authorization/role-assi
   }
 }
 
-module vmRoleAssignment '../../../../../../avm/1.0.0/ptn/authorization/role-assignment/modules/resource-group.bicep' = {
+module vmRoleAssignment '../../../../../avm/1.0.0/ptn/authorization/role-assignment/modules/resource-group.bicep' = {
   name: 'Role-Assignment-VM-${time}'
   scope: resourceGroup(varServicesSubId, sessionHostResourceGroup)
   params: {
@@ -101,7 +101,7 @@ module vmRoleAssignment '../../../../../../avm/1.0.0/ptn/authorization/role-assi
 }
 
 // Automation account.
-module automationAccount '../../../../../../avm/1.1.0/res/automation/automation-account/main.bicep' = {
+module automationAccount '../../../../../avm/1.1.0/res/automation/automation-account/main.bicep' = {
   scope: resourceGroup(varServicesSubId, hostPoolResourceGroup)
   name: 'Automation-Account-${time}'
   params: {
@@ -159,7 +159,7 @@ module automationAccount '../../../../../../avm/1.1.0/res/automation/automation-
 
 // Automation accounts.
 @batchSize(1)
-module modules '../../../../../../avm/1.1.0/res/automation/automation-account/module/main.bicep' = [
+module modules '../../../../../avm/1.1.0/res/automation/automation-account/module/main.bicep' = [
   for i in range(0, length(varModules)): {
     scope: resourceGroup(varServicesSubId, hostPoolResourceGroup)
     name: 'AA-Module-${i}-${time}'

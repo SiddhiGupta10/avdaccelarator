@@ -1,30 +1,37 @@
-name: 'subcr-avd-tst-001'
+name: 'AVD Main Subscription - Baseline Deployment Pipeline'
 
 parameters:
 - name: environment
   displayName: 'Environment to deploy to'
   type: string
-  default: 'test'
+  default: 'canary'
   values:
-  - test
-  - integration
-  - trn
+  - canary
+  - production
 
 variables:
-- group: AVD-Canary-Config
+- group: AVD-Variable-Group
+- template: pipeline.variables.tst.yml
 
-# Environment specific variable files
-- ${{ if eq(parameters.environment, 'test') }}:
-  - template: pipeline.variables.tst.yml
+# Environment specific details
+- ${{ if eq(parameters.environment, 'canary') }}:
+  # - name: poolName
+  #   value: ''
+  - name: serviceConnection
+    value: '<service_connection>' ## change for each subscription
+  - name: devOpsPipelineEnvironment
+    value: 'AVD-Canary'
 
-- ${{ if eq(parameters.environment, 'integration') }}:
-  - template: pipeline.variables.integration.yml
+- ${{ if eq(parameters.environment, 'production') }}:
+  # - name: poolName
+  #   value: ''
+  - name: serviceConnection
+    value: '<service_connection>' ## change for each subscription
+  - name: devOpsPipelineEnvironment
+    value: 'AVD-Production'
 
-- ${{ if eq(parameters.environment, 'trn') }}:
-  - template: pipeline.variables.trn.cmp.yml
-
-pool:
-  name: $(poolName)
+# pool:
+#   name: $(poolName)
 
 trigger: none
 
@@ -32,28 +39,22 @@ stages:
 - stage: Validation
   condition: succeeded()
   jobs:
-  - deployment: Template_Validation
-    displayName: 'Baseline validation'
-    environment: $(devOpsPipelineEnvironment)
-    strategy:
-      runOnce:
-        deploy:
-          steps:
-          - checkout: self
-          - task: AzureCLI@2
-            inputs:
-              azureSubscription: '$(serviceConnection)'
-              scriptType: bash
-              scriptLocation: inlineScript
-              useGlobalConfig: false
-              workingDirectory: '$(System.DefaultWorkingDirectory)'
-              inlineScript: |
-                az --version
-                az deployment sub what-if \
-                  --location $(location) \
-                  --template-file $(System.DefaultWorkingDirectory)/$(templatePath) \
-                  --parameters $(System.DefaultWorkingDirectory)/$(parametersPath) \
-                  --parameters avdVmLocalUserPassword="$(avdVmLocalUserPassword)"
+  - job: Template_Validation
+    displayName: 'Baseline Validation - ${{ parameters.environment }}'
+    steps:
+    - task: AzureCLI@2
+      inputs:
+        azureSubscription: '$(serviceConnection)'
+        scriptType: bash
+        scriptLocation: inlineScript
+        useGlobalConfig: false
+        inlineScript: |
+          az --version
+          az deployment sub what-if \
+            --location $(location) \
+            --template-file $(System.DefaultWorkingDirectory)/$(templatePath) \
+            --parameters $(System.DefaultWorkingDirectory)/$(parametersPath) \
+            --parameters avdVmLocalUserPassword="$(avdVmLocalUserPassword)"
 
 - stage: Deployment
   dependsOn:
@@ -61,7 +62,7 @@ stages:
   condition: succeeded('Validation')
   jobs:
   - deployment: Template_Deployment
-    displayName: 'Baseline deployment'
+    displayName: 'Baseline deployment - ${{ parameters.environment }}'
     environment: $(devOpsPipelineEnvironment)
     strategy:
       runOnce:

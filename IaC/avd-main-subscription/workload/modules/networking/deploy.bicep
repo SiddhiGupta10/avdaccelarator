@@ -325,7 +325,7 @@ var privateDnsZoneSuffixes_Monitor = {
 // =========== //
 
 // AVD network security group.
-module networksecurityGroupAvd '../../../../../../avm/1.0.0/res/network/network-security-group/main.bicep' = if (createVnet) {
+module networksecurityGroupAvd '../../../../../avm/1.0.0/res/network/network-security-group/main.bicep' = if (createVnet) {
   scope: resourceGroup('${workloadSubsId}', '${networkObjectsRgName}')
   name: 'NSG-AVD-${time}'
   params: {
@@ -339,7 +339,7 @@ module networksecurityGroupAvd '../../../../../../avm/1.0.0/res/network/network-
 }
 
 // Private endpoint network security group.
-module networksecurityGroupPrivateEndpoint '../../../../../../avm/1.0.0/res/network/network-security-group/main.bicep' = if (createVnet && (deployPrivateEndpointKeyvaultStorage || deployAvdPrivateLinkService)) {
+module networksecurityGroupPrivateEndpoint '../../../../../avm/1.0.0/res/network/network-security-group/main.bicep' = if (createVnet && (deployPrivateEndpointKeyvaultStorage || deployAvdPrivateLinkService)) {
   scope: resourceGroup('${workloadSubsId}', '${networkObjectsRgName}')
   name: 'NSG-Private-Endpoint-${time}'
   params: {
@@ -353,7 +353,7 @@ module networksecurityGroupPrivateEndpoint '../../../../../../avm/1.0.0/res/netw
 }
 
 // Application security group.
-module applicationSecurityGroup '../../../../../../avm/1.0.0/res/network/application-security-group/main.bicep' = if (deployAsg) {
+module applicationSecurityGroup '../../../../../avm/1.0.0/res/network/application-security-group/main.bicep' = if (deployAsg) {
   scope: resourceGroup('${workloadSubsId}', '${computeObjectsRgName}')
   name: 'ASG-${time}'
   params: {
@@ -365,7 +365,7 @@ module applicationSecurityGroup '../../../../../../avm/1.0.0/res/network/applica
 }
 
 // AVD route table.
-module routeTableAvd '../../../../../../avm/1.0.0/res/network/route-table/main.bicep' = if (createVnet) {
+module routeTableAvd '../../../../../avm/1.0.0/res/network/route-table/main.bicep' = if (createVnet) {
   scope: resourceGroup('${workloadSubsId}', '${networkObjectsRgName}')
   name: 'Route-Table-AVD-${time}'
   params: {
@@ -378,7 +378,7 @@ module routeTableAvd '../../../../../../avm/1.0.0/res/network/route-table/main.b
 }
 
 // Private endpoint route table.
-module routeTablePrivateEndpoint '../../../../../../avm/1.0.0/res/network/route-table/main.bicep' = if (createVnet && (deployPrivateEndpointKeyvaultStorage || deployAvdPrivateLinkService)) {
+module routeTablePrivateEndpoint '../../../../../avm/1.0.0/res/network/route-table/main.bicep' = if (createVnet && (deployPrivateEndpointKeyvaultStorage || deployAvdPrivateLinkService)) {
   scope: resourceGroup('${workloadSubsId}', '${networkObjectsRgName}')
   name: 'Route-Table-PE-${time}'
   params: {
@@ -391,7 +391,7 @@ module routeTablePrivateEndpoint '../../../../../../avm/1.0.0/res/network/route-
 }
 
 // DDoS Protection Plan
-module ddosProtectionPlan '../../../../../../avm/1.0.0/res/network/ddos-protection-plan/main.bicep' = if (deployDDoSNetworkProtection) {
+module ddosProtectionPlan '../../../../../avm/1.0.0/res/network/ddos-protection-plan/main.bicep' = if (deployDDoSNetworkProtection) {
   scope: resourceGroup('${workloadSubsId}', '${networkObjectsRgName}')
   name: 'DDoS-Protection-Plan-${time}'
   params: {
@@ -402,7 +402,7 @@ module ddosProtectionPlan '../../../../../../avm/1.0.0/res/network/ddos-protecti
 }
 
 // Virtual network.
-module virtualNetwork '../../../../../../avm/1.0.0/res/network/virtual-network/main.bicep' = if (createVnet) {
+module virtualNetwork '../../../../../avm/1.0.0/res/network/virtual-network/main.bicep' = if (createVnet) {
   scope: resourceGroup('${workloadSubsId}', '${networkObjectsRgName}')
   name: 'vNet-${time}'
   params: {
@@ -520,7 +520,7 @@ module virtualNetwork '../../../../../../avm/1.0.0/res/network/virtual-network/m
 }
 
 // Private DNS zones Azure files
-module privateDnsZoneAzureFiles '../../../../../../avm/1.0.0/res/network/private-dns-zone/main.bicep' = if (createPrivateDnsZones) {
+module privateDnsZoneAzureFiles '../../../../../avm/1.0.0/res/network/private-dns-zone/main.bicep' = if (createPrivateDnsZones) {
   scope: resourceGroup('${workloadSubsId}', '${networkObjectsRgName}')
   name: 'Private-DNS-Files-${time}'
   params: {
@@ -531,7 +531,7 @@ module privateDnsZoneAzureFiles '../../../../../../avm/1.0.0/res/network/private
 }
 
 // Private DNS zones key vault
-module privateDnsZoneKeyVault '../../../../../../avm/1.0.0/res/network/private-dns-zone/main.bicep' = if (createPrivateDnsZones) {
+module privateDnsZoneKeyVault '../../../../../avm/1.0.0/res/network/private-dns-zone/main.bicep' = if (createPrivateDnsZones) {
   scope: resourceGroup('${workloadSubsId}', '${networkObjectsRgName}')
   name: 'Private-DNS-Kv-${time}'
   params: {
@@ -542,7 +542,7 @@ module privateDnsZoneKeyVault '../../../../../../avm/1.0.0/res/network/private-d
 }
 
 // Private DNS zones AVD
-module privateDnsZoneAVDConnection '../../../../../../avm/1.0.0/res/network/private-dns-zone/main.bicep' = if (createPrivateDnsZones && deployAvdPrivateLinkService) {
+module privateDnsZoneAVDConnection '../../../../../avm/1.0.0/res/network/private-dns-zone/main.bicep' = if (createPrivateDnsZones && deployAvdPrivateLinkService) {
   scope: resourceGroup('${workloadSubsId}', '${networkObjectsRgName}')
   name: 'Private-DNS-AVD-Connection-${time}'
   params: {
@@ -553,7 +553,7 @@ module privateDnsZoneAVDConnection '../../../../../../avm/1.0.0/res/network/priv
 }
 
 // Private DNS zones AVD Discovery
-module privateDnsZoneAVDDiscovery '../../../../../../avm/1.0.0/res/network/private-dns-zone/main.bicep' = if (createPrivateDnsZones && deployAvdPrivateLinkService) {
+module privateDnsZoneAVDDiscovery '../../../../../avm/1.0.0/res/network/private-dns-zone/main.bicep' = if (createPrivateDnsZones && deployAvdPrivateLinkService) {
   scope: resourceGroup('${workloadSubsId}', '${networkObjectsRgName}')
   name: 'Private-DNS-AVD-Discovery-${time}'
   params: {

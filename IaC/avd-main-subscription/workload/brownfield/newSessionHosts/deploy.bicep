@@ -15,7 +15,7 @@ param computeRgResourceGroupName string
 param deploymentPrefix string = 'AVD1'
 
 @allowed([
-  'int' // Intergration
+  'dev' // Development
   'tst' // Test
   'pr' // Production
 ])
@@ -170,13 +170,13 @@ var varMaxSessionHostsDivisionRemainderValue = count % varMaxSessionHostsPerTemp
 var varSessionHostBatchCount = varMaxSessionHostsDivisionRemainderValue > 0
   ? varMaxSessionHostsDivisionValue + 1
   : varMaxSessionHostsDivisionValue
-var varDeploymentEnvironmentComputeStorage = (deploymentEnvironment == 'int')
-  ? 'i'
+var varDeploymentEnvironmentComputeStorage = (deploymentEnvironment == 'dev')
+  ? 'd'
   : ((deploymentEnvironment == 'tst') ? 't' : ((deploymentEnvironment == 'pr') ? 'p' : ''))
 var varSessionHostNamePrefix = customNaming
   ? sessionHostCustomNamePrefix
   : 'vm${varDeploymentPrefixLowercase}${varDeploymentEnvironmentComputeStorage}${varSessionHostLocationAcronym}'
-var varLocations = loadJsonContent('../../../../../../workload/variables/locations.json')
+var varLocations = loadJsonContent('../../../../../workload/variables/locations.json')
 var varSessionHostLocationLowercase = toLower(replace(location, ' ', ''))
 var varFslogixSharePath = configureFslogix
   ? '\\\\${last(split(fslogixStorageAccountResourceId, '/'))}.file.${environment().suffixes.storage}\\${fslogixFileShareName}'
@@ -199,7 +199,7 @@ resource hostPoolGet 'Microsoft.DesktopVirtualization/hostPools@2023-09-05' exis
 }
 
 // Hostpool update
-module hostPool '../../../../../../avm/1.0.0/res/desktop-virtualization/host-pool/main.bicep' = {
+module hostPool '../../../../../avm/1.0.0/res/desktop-virtualization/host-pool/main.bicep' = {
   scope: resourceGroup(split(hostPoolResourceId, '/')[4])
   name: 'HostPool-${time}'
   params: {

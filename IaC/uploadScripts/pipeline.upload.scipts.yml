@@ -15,8 +15,11 @@ parameters:
   default: '' ## provide the storage account name where scripts to be uploaded
 
 variables:
+- name: vmImage
+  value: 'ubuntu-latest'
 - name: fileList
   value: 'restartSessionHosts.ps1'  # space-separated list of file names
+
 - ${{ if eq(parameters.environment, 'Production') }}:
   - name: serviceConnection
     value: '<service_connection>' ## change for each subscription
@@ -24,6 +27,7 @@ variables:
     value: 'AVD-Production'
   # - name: poolName
   #   value: ''
+  
 - ${{ if eq(parameters.environment, 'Canary') }}:
   - name: serviceConnection
     value: '<service_connection>' ## change for each subscription

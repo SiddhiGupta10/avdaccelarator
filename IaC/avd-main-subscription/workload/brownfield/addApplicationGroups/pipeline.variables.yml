@@ -1,0 +1,23 @@
+variables:
+
+########### Pipeline variables ###############
+
+- name: templatePath
+  value: 'IaC/avd-main-subscription/workload/brownfield/addApplicationGroups/deploy.bicep' ## path to the bicep template file
+
+- name: parametersPath
+  value: 'IaC/avd-main-subscription/workload/brownfield/addApplicationGroups/parameters/deployApplicationGroups.bicepparam' ## path to the parameters file
+
+- name: azurePowerShellVersion
+  value: latestVersion
+
+########### Pool variables ###############
+
+- name: vmImage
+  value: 'ubuntu-latest'
+
+########### Deployment variables ###############
+
+- name: location
+  value: 'swedencentral'
+

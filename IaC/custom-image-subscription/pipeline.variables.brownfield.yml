@@ -3,10 +3,10 @@ variables:
 ########### Pipeline variables ###############
 
 - name: templateBasePath
-  value: 'workload/bicep/brownfield/customImageTemplatesPrerequisites/deploy.bicep' ## path to the bicep template file from workload folder
+  value: 'workload/bicep/brownfield/customImageTemplatesPrerequisites/deploy.bicep' ## path to the bicep template file
 
 - name: parametersPath
-  value: 'IaC/custom-image-subscription/parameters/custom-image-brownfield.bicepparam'
+  value: 'IaC/custom-image-subscription/parameters/custom-image-brownfield.bicepparam' ## path to the bicep parameter file
 
 - name: azurePowerShellVersion
   value: latestVersion

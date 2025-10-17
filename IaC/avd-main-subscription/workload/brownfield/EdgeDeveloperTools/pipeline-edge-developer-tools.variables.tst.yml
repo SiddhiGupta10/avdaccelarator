@@ -1,8 +1,0 @@
-variables:
-  resourceGroup: 'rg-avd-epc-tst-euw-005'
-  hostPoolName: 'avd-tst-epcts-euw-hostpool'
-  registryPath: 'HKLM:\SOFTWARE\Policies\Microsoft\Edge'
-  registryName: 'DeveloperToolsAvailability'
-  poolName: 'TST-AgentPool-01'
-  serviceConnection: 'SC-SUBCR-AVD-TST-001'
-  sessionHostVmResourceGroup: 'rg-avd-epc-tst-sec-007'

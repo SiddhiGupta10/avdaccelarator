@@ -1,25 +1,36 @@
-name: 'subcr-avd-tst-001'
+name: 'New Session Hosts Deployment'
 
 parameters:
 - name: environment
   displayName: 'Environment to deploy to'
   type: string
-  default: 'test'
+  default: 'canary'
   values:
-  - test
-  - integration
+  - canary
+  - production
 
 variables:
+- template: pipeline.variables.yml
 
-# Environment specific variable files
-- ${{ if eq(parameters.environment, 'test') }}:
-  - template: pipeline.variables.tst.yml
+# Environment specific details
+- ${{ if eq(parameters.environment, 'canary') }}:
+  # - name: poolName
+  #   value: ''
+  - name: serviceConnection
+    value: '<service_connection>' ## change for each subscription
+  - name: devOpsPipelineEnvironment
+    value: 'AVD-Canary'
 
-- ${{ if eq(parameters.environment, 'integration') }}:
-  - template: pipeline.variables.integration.yml
+- ${{ if eq(parameters.environment, 'production') }}:
+  # - name: poolName
+  #   value: ''
+  - name: serviceConnection
+    value: '<service_connection>' ## change for each subscription
+  - name: devOpsPipelineEnvironment
+    value: 'AVD-Production'
 
-pool:
-  name: $(poolName)
+# pool:
+#   name: $(poolName)
 
 trigger: none
 
@@ -27,27 +38,21 @@ stages:
 - stage: Validation
   condition: succeeded()
   jobs:
-  - deployment: Template_Validation
+  - job: Template_Validation
     displayName: 'Validation - ${{ parameters.environment }}'
-    environment: $(devOpsPipelineEnvironment)
-    strategy:
-      runOnce:
-        deploy:
-          steps:
-          - checkout: self
-          - task: AzureCLI@2
-            inputs:
-              azureSubscription: '$(serviceConnection)'
-              scriptType: bash
-              scriptLocation: inlineScript
-              useGlobalConfig: false
-              workingDirectory: '$(System.DefaultWorkingDirectory)'
-              inlineScript: |
-                az --version
-                az deployment sub what-if \
-                  --location $(location) \
-                  --template-file $(System.DefaultWorkingDirectory)/$(templatePath) \
-                  --parameters $(System.DefaultWorkingDirectory)/$(parametersPath)
+    steps:
+    - task: AzureCLI@2
+      inputs:
+        azureSubscription: '$(serviceConnection)'
+        scriptType: bash
+        scriptLocation: inlineScript
+        useGlobalConfig: false
+        inlineScript: |
+          az --version
+          az deployment sub what-if \
+            --location $(location) \
+            --template-file $(System.DefaultWorkingDirectory)/$(templatePath) \
+            --parameters $(System.DefaultWorkingDirectory)/$(parametersPath)
 
 - stage: Deployment
   dependsOn:

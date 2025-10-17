@@ -186,7 +186,7 @@ resource keyVault 'Microsoft.KeyVault/vaults@2023-07-01' existing = {
 }
 
 // Session hosts
-module sessionHosts '../../../../../../avm/1.1.0/res/compute/virtual-machine/main.bicep' = [
+module sessionHosts '../../../../../avm/1.1.0/res/compute/virtual-machine/main.bicep' = [
   for i in range(0, count): {
     scope: resourceGroup('${subscriptionId}', '${computeObjectsRgName}')
     name: 'SH-${batchId + 1}-${i + countIndex}-${time}'
@@ -282,7 +282,7 @@ module sessionHosts '../../../../../../avm/1.1.0/res/compute/virtual-machine/mai
 ]
 
 // Add antimalware extension to session host.
-module sessionHostsAntimalwareExtension '../../../../../../avm/1.0.0/res/compute/virtual-machine/extension/main.bicep' = [
+module sessionHostsAntimalwareExtension '../../../../../avm/1.0.0/res/compute/virtual-machine/extension/main.bicep' = [
   for i in range(0, count): if (deployAntiMalwareExt) {
     scope: resourceGroup('${subscriptionId}', '${computeObjectsRgName}')
     name: 'SH-Antimal-${batchId + 1}-${i + countIndex}-${time}'
@@ -320,7 +320,7 @@ module sessionHostsAntimalwareExtension '../../../../../../avm/1.0.0/res/compute
 ]
 
 // Add monitoring extension to session host
-module ama '../../../../../../avm/1.0.0/res/compute/virtual-machine/extension/main.bicep' = [
+module ama '../../../../../avm/1.0.0/res/compute/virtual-machine/extension/main.bicep' = [
   for i in range(0, count): if (deployMonitoring) {
     scope: resourceGroup('${subscriptionId}', '${computeObjectsRgName}')
     name: 'SH-Mon-${batchId + 1}-${i + countIndex}-${time}'

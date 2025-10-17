@@ -1,14 +1,14 @@
 using '../deploy.bicep'
-param automationAccountName = 'aa-avd-tst-euw-001'
-param runbookName  = 'runbk-avd-tst-euw'
-param userAssignedManagedIdentityName = 'id-avd-epc-tst-sec-004'
-param runbookScriptUrl = 'https://stavdshdtstsec007.blob.core.windows.net/scripts/restartSessionHosts.ps1'
-param hostPoolResourceGroup = 'rg-avd-epc-tst-sec-004'
+param automationAccountName = 'aa-avd-tst-001'
+param runbookName  = 'runbk-avd-tst-001'
+param userAssignedManagedIdentityName = 'id-avd-tst-001'
+param runbookScriptUrl = 'https://<storage-account>.blob.core.windows.net/scripts/restartSessionHosts.ps1'
+param hostPoolResourceGroup = 'rg-avd-hp-tst-001'
 param hostPoolName = 'avd-tst-epc-weu-hostpool'
-param sessionHostResourceGroup  = 'rg-avd-epc-tst-sec-002'
-param servicesSubId = 'bf71c834-f4b7-4e3e-b221-d4052b2aabe6' //subcr-avd-tst-001
-param privateDnsZoneId = '/subscriptions/f48119b4-1d9e-4757-af90-f3c99d22876a/resourceGroups/rg-net-tst-sec-002/providers/Microsoft.Network/privateDnsZones/privatelink.azure-automation.net'
-param subnetResourceId ='/subscriptions/bf71c834-f4b7-4e3e-b221-d4052b2aabe6/resourceGroups/rg-avd-epcint-tst-sec-009/providers/Microsoft.Network/virtualNetworks/vnet-avd-tst-sec-002/subnets/snet-avd-tst-sec-002'
+param sessionHostResourceGroup  = 'rg-avd-vm-tst-001'
+param servicesSubId = '<subscription-id>'
+param privateDnsZoneId = '/subscriptions/<subscription-id>/resourceGroups/<rg-name>/providers/Microsoft.Network/privateDnsZones/privatelink.wvd.microsoft.com'
+param subnetResourceId ='/subscriptions/<subscription-id>/resourceGroups/<rg-name>/providers/Microsoft.Network/virtualNetworks/<subnet-vnet>/subnets/<subnet-name>'
 param jobScheduleDetails = [
   {
     action: 'Phase1-Drain'
@@ -20,7 +20,7 @@ param jobScheduleDetails = [
     action: 'Reboot-Alert'
     scheduleName: 'sched-phase1-alert'
     phaseName: 'Phase1'
-    message: 'Your session host will reboot in 1 hour. Please save your work.'
+    message: 'Reboot starts in 15 minutes. Please save your work and close the system.'
   }
   {
     action: 'Phase1-Reboot'
@@ -38,7 +38,7 @@ param jobScheduleDetails = [
     action: 'Reboot-Alert'
     scheduleName: 'sched-phase2-alert'
     phaseName: 'Phase2'
-    message: 'Your session host will reboot in 1 hour. Please save your work.'
+    message: 'Reboot starts in 15 minutes. Please save your work and close the system.'
   }
   {
     action: 'Phase2-Reboot'
@@ -63,9 +63,9 @@ param schedules = [
     name: 'sched-phase1-alert'
     frequency: 'Week'
     interval: 1
-    startTime: '2025-10-11T20:00:00+03:00' //8 PM Finland time Saturday
+    starttime: '2025-10-11T20:45:00+03:00' //8:45 PM Finland time Saturday
     timeZone: 'FLE Standard Time'
-    description: '8:00 PM Logoff Warning Alert every Saturday Finland time'
+    description: '8:45PM broadcast message every Saturday Finland time'
     advancedSchedule: {
       weekDays: ['Saturday']
     }
@@ -96,9 +96,9 @@ param schedules = [
     name: 'sched-phase2-alert'
     frequency: 'Week'
     interval: 1
-    starttime: '2025-10-12T03:00:00+03:00' //3 AM Finland time Sunday
+    starttime: '2025-10-12T03:45:00+03:00' //3:45 AM Finland time Sunday
     timeZone: 'FLE Standard Time'
-    description: '3:00 AM Logoff Warning Alert every Sunday Finland time'
+    description: '3:45AM broadcast message every Sunday Finland time'
     advancedSchedule: {
       weekDays: ['Sunday']
     }

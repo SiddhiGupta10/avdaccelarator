@@ -1,25 +1,25 @@
 using '.../../../deploy.bicep'
 
-param location = 'swedencentral'
+param location = 'eastus'
 param customNaming = true
 param deploySessionHosts = true
 param sessionHostCustomNamePrefix = 'vmavdtstadd'
-param hostPoolResourceId = '/subscriptions/bf71c834-f4b7-4e3e-b221-d4052b2aabe6/resourcegroups/rg-avd-epc-tst-euw-005/providers/Microsoft.DesktopVirtualization/hostpools/avd-tst-epcts-euw-hostpool'
-param keyVaultResourceId = '/subscriptions/bf71c834-f4b7-4e3e-b221-d4052b2aabe6/resourceGroups/rg-avd-epc-tst-euw-005/providers/Microsoft.KeyVault/vaults/kv-avd-tst-sec-001'
+param hostPoolResourceId = '/subscriptions/<subscription-id>/resourcegroups/<rg-name>/providers/Microsoft.DesktopVirtualization/hostpools/<hostpool-name>'
+param keyVaultResourceId = '/subscriptions/<subscription-id>/resourceGroups/<rg-name>/providers/Microsoft.KeyVault/vaults/kv-avd-tst-001'
 param configureFslogix = false
-param computeRgResourceGroupName = 'rg-avd-epc-tst-sec-007'
+param computeRgResourceGroupName = 'rg-avd-vm-tst-001'
 param countIndex = 3
 param count = 1
-param customImageDefinitionId = '/subscriptions/dea22b47-2006-40f9-bc94-2eee53d8ddb9/resourceGroups/rg-avd-shd-epc-tst-sec-007/providers/Microsoft.Compute/galleries/gal_tst_avd_07/images/win11-24h2-avd/versions/1.0.31'
+param customImageDefinitionId = '/subscriptions/<subscription-id>/resourceGroups/<rg-name>/providers/Microsoft.Compute/galleries/gal_tst_avd_001/images/win11-24h2-avd/versions/<image-version>'
 param customOsDiskSizeGB = 256
 param dataCollectionRuleId = ''
 param diskEncryptionSetResourceId = ''
 param diskType = 'Premium_LRS'
 param securityType = 'TrustedLaunch'
-param subnetResourceId = '/subscriptions/bf71c834-f4b7-4e3e-b221-d4052b2aabe6/resourceGroups/rg-avd-epc-tst-sec-006/providers/Microsoft.Network/virtualNetworks/vnet-avd-tst-sec-001/subnets/snet-avd-tst-sec-001'
+param subnetResourceId = '/subscriptions/<subscription-id>/resourceGroups/<rg-name>/providers/Microsoft.Network/virtualNetworks/<vnet-name>/subnets/<subnet-name>'
 param vmSize = 'Standard_D8ads_v5'
 param useSharedImage = true
 param timeZoneSessionHosts = 'FLE Standard Time'
-param hostPoolRdpProperties = 'disabletimezone:i:1;drivestoredirect:s:*;usbdevicestoredirect:s:*;redirectclipboard:i:1;redirectprinters:i:1;audiomode:i:0;videoplaybackmode:i:1;devicestoredirect:s:*;redirectcomports:i:0;redirectsmartcards:i:1;redirectwebauthn:i:1;use multimon:i:1;audiocapturemode:i:1;enablerdsaadauth:i:1;redirectlocation:i:0'
-param storageAccountName = 'stavdshdtstsec007'
+param hostPoolRdpProperties = ''
+param storageAccountName = '<storage account name>'
 param deploymentEnvironment = 'tst'

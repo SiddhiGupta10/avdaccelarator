@@ -41,7 +41,7 @@ param time string = utcNow()
 // This variable contains a number of objects that load in the custom Azure Policy Set/Initiative Defintions that are provided as part of the ESLZ/ALZ reference implementation - this is automatically created in the file 'infra-as-code\bicep\modules\policy\lib\policy_set_definitions\_policySetDefinitionsBicepInput.txt' via a GitHub action, that runs on a daily schedule, and is then manually copied into this variable.
 var varCustomPolicySetDefinitions = {
   name: 'policy-set-deploy-networking'
-  libSetDefinition: json(loadTextContent('../../../../../../../workload/policies/networking/policy-sets/policy-set-definition-es-deploy-networking.json'))
+  libSetDefinition: json(loadTextContent('../../../../../../workload/policies/networking/policy-sets/policy-set-definition-es-deploy-networking.json'))
 }
 
 // =========== //
@@ -50,7 +50,7 @@ var varCustomPolicySetDefinitions = {
 
 // Storage account for NSG flow logs. If blank value passed - then to 
 
-module deployStgAccountForFlowLogs '../../../../../../../avm/1.0.0/res/storage/storage-account/main.bicep' = if (empty(stgAccountForFlowLogsId)) {
+module deployStgAccountForFlowLogs '../../../../../../avm/1.0.0/res/storage/storage-account/main.bicep' = if (empty(stgAccountForFlowLogsId)) {
   scope: resourceGroup('${monitoringRgName}')
   name: (length('Deploy-Stg-Account-for-Flow-Logs-${stgAccountForFlowLogsName}-${time}') > 64) ? take('Deploy-Stg-Account-for-Flow-Logs-${stgAccountForFlowLogsName}-${time}', 64) : 'Deploy-Stg-Account-for-Flow-Logs-${stgAccountForFlowLogsName}-${time}'
   params: {
@@ -69,7 +69,7 @@ module deployStgAccountForFlowLogs '../../../../../../../avm/1.0.0/res/storage/s
 
 // Policy set definition.
 
-module networkingPolicySetDefinition '../../../../../../../workload/bicep/modules/azurePolicies/policySetDefinitionsSubscriptions.bicep' = {
+module networkingPolicySetDefinition '../../../../../../workload/bicep/modules/azurePolicies/policySetDefinitionsSubscriptions.bicep' = {
   scope: subscription('${workloadSubsId}')
   name: (length('NetPolicySetDefini-${time}') > 64) ? take('AVD-Network-Policy-Set-Definition-${time}', 64) : 'AVD-Network-Policy-Set-Definition-${time}'
   params: {
@@ -85,7 +85,7 @@ module networkingPolicySetDefinition '../../../../../../../workload/bicep/module
 }
 
 // Policy set assignment.
-module networkingPolicySetDefinitionAssignment '../../../../../../../avm/1.0.0/ptn/authorization/policy-assignment/modules/subscription.bicep' = {
+module networkingPolicySetDefinitionAssignment '../../../../../../avm/1.0.0/ptn/authorization/policy-assignment/modules/subscription.bicep' = {
   scope: subscription('${workloadSubsId}')
   name: (length('NetPolicySetAssign-${time}') > 64) ? take('AVD-NetPolicySetAssign-${time}', 64) : 'AVD-NetPolicySetAssign-${time}'
   params: {
@@ -111,7 +111,6 @@ module networkingPolicySetDefinitionAssignment '../../../../../../../avm/1.0.0/p
   }
   dependsOn: [
     networkingPolicySetDefinition
-    deployStgAccountForFlowLogs
   ]
 }
 // =========== //

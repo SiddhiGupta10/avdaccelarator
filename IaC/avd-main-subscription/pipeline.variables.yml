@@ -1,0 +1,22 @@
+variables:
+
+########### Pipeline variables ###############
+
+- name: templatePath
+  value: 'workload/bicep/deploy-baseline.bicep' ## path to the bicep template file
+
+- name: parametersPath
+  value: 'workload/bicep/parameters/deploy-baseline-all.bicepparam' ## path to the parameters file
+
+- name: azurePowerShellVersion
+  value: latestVersion
+
+########### Pool variables ###############
+
+- name: vmImage
+  value: 'ubuntu-latest'
+
+########### Deployment variables ###############
+
+- name: location
+  value: 'swedencentral'

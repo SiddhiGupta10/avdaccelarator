@@ -49,7 +49,7 @@ resource hostPoolGet 'Microsoft.DesktopVirtualization/hostPools@2023-09-05' exis
 }
 
 // Application groups.
-module applicationGroups '../../../../../../avm/1.0.0/res/desktop-virtualization/application-group/main.bicep' = [for applicationGroup in applicationGroupNames: {
+module applicationGroups '../../../../../avm/1.0.0/res/desktop-virtualization/application-group/main.bicep' = [for applicationGroup in applicationGroupNames: {
   scope: resourceGroup('${subscriptionId}', '${serviceObjectsRgName}')
   name: '${applicationGroup}-${time}'
   params: {
@@ -72,7 +72,7 @@ resource workSpaceGet 'Microsoft.DesktopVirtualization/workspaces@2023-09-05' ex
 }
 
 // Workspace.
-module workSpace '../../../../../../avm/1.0.0/res/desktop-virtualization/workspace/main.bicep' = {
+module workSpace '../../../../../avm/1.0.0/res/desktop-virtualization/workspace/main.bicep' = {
   scope: resourceGroup('${subscriptionId}', '${serviceObjectsRgName}')
   name: 'Workspace-${time}'
   params: {
