@@ -11,7 +11,7 @@ parameters:
 
 variables:
 - group: AVD-Variable-Group
-- template: pipeline.variables.tst.yml
+- template: pipeline.variables.yml
 
 # Environment specific details
 - ${{ if eq(parameters.environment, 'canary') }}:
